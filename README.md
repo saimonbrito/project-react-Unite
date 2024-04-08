@@ -9,3 +9,5 @@
 - react-dom
 - lucide-react
 - dayjs
+
+### projeto finalizado com sucesso mas tera futras alteraçoes 
