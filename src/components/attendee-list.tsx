@@ -1,6 +1,5 @@
 import  {ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreHorizontal, Search} from 'lucide-react'
-import { ChangeEvent, EventHandler, useState } from 'react'
-import { attendees } from '../data/attendees'
+import { ChangeEvent, useEffect, useState } from 'react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 import relativeTime from  'dayjs/plugin/relativeTime'
@@ -12,19 +11,50 @@ import { IconTd } from './iconTd'
 
 
 
+
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
-
+interface attendees {
+  id: string
+  name: string
+  email: string
+  createdAt: string 
+  checkedInAt: string | null
+}
 
 export function AttendeeList(){
+
   const  [valorDoInput, setValorDoInput] = useState('')
   const  [page, setPage] = useState(1)
 
-  const totalPage = Math.ceil(attendees.length / 10)
+const [total, setTotal]=useState(0)
+  const [attendees, setAttendees] = useState<attendees[]>([])
+
+  const totalPage = Math.ceil(total/ 10)
+
+  useEffect(()=>{
+    const url = new URL('http://localhost:3333/events/9e9bd979-9d10-4915-b339-3786b1634f33/attendees')
+
+    url.searchParams.set('pageIndex', String(page -1))
+
+    if(valorDoInput.length > 0){
+    url.searchParams.set('query',valorDoInput)
+    }
+
+
+    fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      setAttendees(data.attendees)
+      setTotal(data.total)
+      console.log(data.attendees)
+    })
+  },[page,valorDoInput])
     
   function buscarValorDoInput(event:ChangeEvent<HTMLInputElement>){
    setValorDoInput(event.target.value)
+   setPage(1)
   }
    
   function goToFirstPage(){
@@ -46,7 +76,7 @@ export function AttendeeList(){
       <h1 className="text-2xl font-bold">Participantes</h1>
       <div className="px=3 w-72 py-1.5 border border-white/10 flex gap-3 rounded-lg ">
       <Search className='size-6 text-emerald-300'/>
-      <input  onChange={buscarValorDoInput} className="bg-transparent flex-1 outline-none border-0 p-0 text-sm" placeholder="Buscar participantes" type="text" />
+      <input  onChange={buscarValorDoInput} className="bg-transparent flex-1 outline-none border-0 p-0 text-sm focus:ring-0" placeholder="Buscar participantes" type="text" />
       </div>
     
     </div>
@@ -66,7 +96,7 @@ export function AttendeeList(){
           </tr>
         </thead>
         <tbody>
-            {attendees.slice((page - 1) * 10, page * 10 ).map((attendee)=>{
+            {attendees.map((attendee)=>{
               return(
                 <tr key={attendee.id} className='border border-white/10  hover:bg-white/5'>
                   <IconTd>
@@ -80,7 +110,11 @@ export function AttendeeList(){
                     </div>
                   </IconTd>
                   <IconTd>{dayjs().to(attendee.createdAt)}</IconTd>
-                  <IconTd>{dayjs().to(attendee.checkedInAt)}</IconTd>
+                  <IconTd>{attendee.checkedInAt === null
+                  ? <samp className='text-zinc-400'>não fez check-in</samp>
+                  : dayjs().to(attendee.checkedInAt)
+                  }
+                  </IconTd>
                   <IconTd>
                   
                     <IconButton transparent>
@@ -94,13 +128,13 @@ export function AttendeeList(){
         <tfoot>
           <tr >
           <IconTd colSpan={3}>
-          <span>Mostrando 10 de {attendees.length} </span>
+          <span>Mostrando {attendees.length} de {total  } </span>
             </IconTd>
             
             <IconTd className='text-right' colSpan={3}>    
 
              <div className=' inline-flex items-center gap-8'>
-             <span> Pagina {page} de {} </span>
+             <span> Pagina {page} de {totalPage} </span>
 
              <div className=' flex gap-1.5'>
             
